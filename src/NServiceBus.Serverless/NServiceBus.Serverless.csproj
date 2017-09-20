@@ -1,0 +1,86 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net452;netstandard2.0</TargetFrameworks>
+    <RootNamespace>NServiceBus</RootNamespace>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
+    <OutputPath>..\..\binaries\</OutputPath>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <!--Workaround for https://github.com/dotnet/sdk/issues/1469 -->
+  <PropertyGroup>
+    <DisableLockFileFrameworks>true</DisableLockFileFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net452'">
+    <DefineConstants>$(DefineConstants);REGISTRYLICENSESOURCE;APPCONFIGLICENSESOURCE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.Transactions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\NServiceBus.Core\Extensibility\ContextBag.cs" Link="Extensibility\ContextBag.cs" />
+    <Compile Include="..\NServiceBus.Core\Extensibility\IExtendable.cs" Link="Extensibility\IExtendable.cs" />
+    <Compile Include="..\NServiceBus.Core\Extensibility\ReadOnlyContextBag.cs" Link="Extensibility\ReadOnlyContextBag.cs" />
+    <Compile Include="..\NServiceBus.Core\Features\ExposeSettings.cs" Link="Features\ExposeSettings.cs" />
+    <Compile Include="..\NServiceBus.Core\Headers.cs" Link="Headers.cs" />
+    <Compile Include="..\NServiceBus.Core\Notifications\IEventAggregator.cs" Link="Notifications\IEventAggregator.cs" />
+    <Compile Include="..\NServiceBus.Core\Notifications\EventAggregatorExtensions.cs" Link="Notifications\EventAggregatorExtensions.cs" />
+    <Compile Include="..\NServiceBus.Core\ObjectBuilder\IBuilder.cs" Link="ObjectBuilder\IBuilder.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\BehaviorContext.cs" Link="Pipeline\BehaviorContext.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\IBehaviorContext.cs" Link="Pipeline\IBehaviorContext.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\IPipeline.cs" Link="Pipeline\IPipeline.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\IPipelineCache.cs" Link="Pipeline\IPipelineCache.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\IPipelineExecutor.cs" Link="Pipeline\IPipelineExecutor.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\MainPipelineExecutor.cs" Link="Pipeline\MainPipelineExecutor.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\RootContext.cs" Link="Pipeline\RootContext.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\Incoming\ITransportReceiveContext.cs" Link="Pipeline\Incoming\ITransportReceiveContext.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\Incoming\ReceivePipelineCompleted.cs" Link="Pipeline\Incoming\ReceivePipelineCompleted.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\Incoming\TransportReceiveContext.cs" Link="Pipeline\Incoming\TransportReceiveContext.cs" />
+    <Compile Include="..\NServiceBus.Core\Properties\Resharper.Annotations.g.cs" Link="Properties\Resharper.Annotations.g.cs" />
+    <Compile Include="..\NServiceBus.Core\Transports\IncomingMessage.cs" Link="Transports\IncomingMessage.cs" />
+    <Compile Include="..\NServiceBus.Core\Transports\MessageContext.cs" Link="Transports\MessageContext.cs" />
+    <Compile Include="..\NServiceBus.Core\Transports\TransportTransaction.cs" Link="Transports\TransportTransaction.cs" />
+    <Compile Include="..\NServiceBus.Core\Settings\ReadOnlySettings.cs" Link="Settings\ReadOnlySettings.cs" />
+    <Compile Include="..\NServiceBus.Core\Settings\SettingsHolder.cs" Link="Settings\SettingsHolder.cs" />
+    <Compile Include="..\NServiceBus.Core\Utils\Guard.cs" Link="Utils\Guard.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Fody" Version="2.1.2" PrivateAssets="All" />
+    <PackageReference Include="Janitor.Fody" Version="1.5.1" PrivateAssets="All" />
+    <PackageReference Include="LightInject.Source" Version="5.0.3" PrivateAssets="All" />
+    <PackageReference Include="SimpleJson" Version="0.38.0" PrivateAssets="All" />
+    <PackageReference Include="Obsolete.Fody" Version="4.2.4" PrivateAssets="All" />
+    <PackageReference Include="Particular.CodeRules" Version="0.2.0" PrivateAssets="All" />
+    <PackageReference Include="Particular.Licensing.Sources" Version="1.0.0-alpha0004" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SourceLink.Create.GitHub" Version="2.1.2" PrivateAssets="All" />
+    <DotNetCliToolReference Include="dotnet-sourcelink-git" Version="2.1.2" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="4.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Features\" />
+    <Folder Include="Settings\" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <PackageId>NServiceBus.Serverless</PackageId>
+    <Description>NServiceBus for Serverless hosts</Description>
+  </PropertyGroup>
+</Project>
