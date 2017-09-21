@@ -26,31 +26,31 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\NServiceBus.Core\Extensibility\ContextBag.cs" Link="Extensibility\ContextBag.cs" />
-    <Compile Include="..\NServiceBus.Core\Extensibility\IExtendable.cs" Link="Extensibility\IExtendable.cs" />
-    <Compile Include="..\NServiceBus.Core\Extensibility\ReadOnlyContextBag.cs" Link="Extensibility\ReadOnlyContextBag.cs" />
-    <Compile Include="..\NServiceBus.Core\Features\ExposeSettings.cs" Link="Features\ExposeSettings.cs" />
-    <Compile Include="..\NServiceBus.Core\Headers.cs" Link="Headers.cs" />
-    <Compile Include="..\NServiceBus.Core\Notifications\IEventAggregator.cs" Link="Notifications\IEventAggregator.cs" />
-    <Compile Include="..\NServiceBus.Core\Notifications\EventAggregatorExtensions.cs" Link="Notifications\EventAggregatorExtensions.cs" />
-    <Compile Include="..\NServiceBus.Core\ObjectBuilder\IBuilder.cs" Link="ObjectBuilder\IBuilder.cs" />
-    <Compile Include="..\NServiceBus.Core\Pipeline\BehaviorContext.cs" Link="Pipeline\BehaviorContext.cs" />
-    <Compile Include="..\NServiceBus.Core\Pipeline\IBehaviorContext.cs" Link="Pipeline\IBehaviorContext.cs" />
-    <Compile Include="..\NServiceBus.Core\Pipeline\IPipeline.cs" Link="Pipeline\IPipeline.cs" />
-    <Compile Include="..\NServiceBus.Core\Pipeline\IPipelineCache.cs" Link="Pipeline\IPipelineCache.cs" />
-    <Compile Include="..\NServiceBus.Core\Pipeline\IPipelineExecutor.cs" Link="Pipeline\IPipelineExecutor.cs" />
-    <Compile Include="..\NServiceBus.Core\Pipeline\MainPipelineExecutor.cs" Link="Pipeline\MainPipelineExecutor.cs" />
-    <Compile Include="..\NServiceBus.Core\Pipeline\RootContext.cs" Link="Pipeline\RootContext.cs" />
-    <Compile Include="..\NServiceBus.Core\Pipeline\Incoming\ITransportReceiveContext.cs" Link="Pipeline\Incoming\ITransportReceiveContext.cs" />
-    <Compile Include="..\NServiceBus.Core\Pipeline\Incoming\ReceivePipelineCompleted.cs" Link="Pipeline\Incoming\ReceivePipelineCompleted.cs" />
-    <Compile Include="..\NServiceBus.Core\Pipeline\Incoming\TransportReceiveContext.cs" Link="Pipeline\Incoming\TransportReceiveContext.cs" />
-    <Compile Include="..\NServiceBus.Core\Properties\Resharper.Annotations.g.cs" Link="Properties\Resharper.Annotations.g.cs" />
-    <Compile Include="..\NServiceBus.Core\Transports\IncomingMessage.cs" Link="Transports\IncomingMessage.cs" />
-    <Compile Include="..\NServiceBus.Core\Transports\MessageContext.cs" Link="Transports\MessageContext.cs" />
-    <Compile Include="..\NServiceBus.Core\Transports\TransportTransaction.cs" Link="Transports\TransportTransaction.cs" />
-    <Compile Include="..\NServiceBus.Core\Settings\ReadOnlySettings.cs" Link="Settings\ReadOnlySettings.cs" />
-    <Compile Include="..\NServiceBus.Core\Settings\SettingsHolder.cs" Link="Settings\SettingsHolder.cs" />
-    <Compile Include="..\NServiceBus.Core\Utils\Guard.cs" Link="Utils\Guard.cs" />
+    <Compile Include="..\NServiceBus.Core\Extensibility\ContextBag.cs" Link="Core\Extensibility\ContextBag.cs" />
+    <Compile Include="..\NServiceBus.Core\Extensibility\IExtendable.cs" Link="Core\Extensibility\IExtendable.cs" />
+    <Compile Include="..\NServiceBus.Core\Extensibility\ReadOnlyContextBag.cs" Link="Core\Extensibility\ReadOnlyContextBag.cs" />
+    <Compile Include="..\NServiceBus.Core\Features\ExposeSettings.cs" Link="Core\Features\ExposeSettings.cs" />
+    <Compile Include="..\NServiceBus.Core\Headers.cs" Link="Core\Headers.cs" />
+    <Compile Include="..\NServiceBus.Core\Notifications\IEventAggregator.cs" Link="Core\Notifications\IEventAggregator.cs" />
+    <Compile Include="..\NServiceBus.Core\Notifications\EventAggregatorExtensions.cs" Link="Core\Notifications\EventAggregatorExtensions.cs" />
+    <Compile Include="..\NServiceBus.Core\ObjectBuilder\IBuilder.cs" Link="Core\ObjectBuilder\IBuilder.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\BehaviorContext.cs" Link="Core\Pipeline\BehaviorContext.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\IBehaviorContext.cs" Link="Core\Pipeline\IBehaviorContext.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\IPipeline.cs" Link="Core\Pipeline\IPipeline.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\IPipelineCache.cs" Link="Core\Pipeline\IPipelineCache.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\IPipelineExecutor.cs" Link="Core\Pipeline\IPipelineExecutor.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\MainPipelineExecutor.cs" Link="Core\Pipeline\MainPipelineExecutor.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\RootContext.cs" Link="Core\Pipeline\RootContext.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\Incoming\ITransportReceiveContext.cs" Link="Core\Pipeline\Incoming\ITransportReceiveContext.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\Incoming\ReceivePipelineCompleted.cs" Link="Core\Pipeline\Incoming\ReceivePipelineCompleted.cs" />
+    <Compile Include="..\NServiceBus.Core\Pipeline\Incoming\TransportReceiveContext.cs" Link="Core\Pipeline\Incoming\TransportReceiveContext.cs" />
+    <Compile Include="..\NServiceBus.Core\Properties\Resharper.Annotations.g.cs" Link="Core\Properties\Resharper.Annotations.g.cs" />
+    <Compile Include="..\NServiceBus.Core\Transports\IncomingMessage.cs" Link="Core\Transports\IncomingMessage.cs" />
+    <Compile Include="..\NServiceBus.Core\Transports\MessageContext.cs" Link="Core\Transports\MessageContext.cs" />
+    <Compile Include="..\NServiceBus.Core\Transports\TransportTransaction.cs" Link="Core\Transports\TransportTransaction.cs" />
+    <Compile Include="..\NServiceBus.Core\Settings\ReadOnlySettings.cs" Link="Core\Settings\ReadOnlySettings.cs" />
+    <Compile Include="..\NServiceBus.Core\Settings\SettingsHolder.cs" Link="Core\Settings\SettingsHolder.cs" />
+    <Compile Include="..\NServiceBus.Core\Utils\Guard.cs" Link="Core\Utils\Guard.cs" />
   </ItemGroup>
 
   <ItemGroup>
