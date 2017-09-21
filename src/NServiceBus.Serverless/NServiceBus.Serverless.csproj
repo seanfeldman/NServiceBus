@@ -77,5 +77,8 @@
   <PropertyGroup>
     <PackageId>NServiceBus.Serverless</PackageId>
     <Description>NServiceBus for Serverless hosts</Description>
+    <ApplicationIcon />
+    <OutputType>Exe</OutputType>
+    <StartupObject />
   </PropertyGroup>
 </Project>
