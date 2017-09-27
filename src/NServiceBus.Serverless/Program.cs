@@ -23,12 +23,17 @@
             var builder = new CommonObjectBuilder(new LightInjectObjectBuilder());
             var eventAggregator = new EventAggregator(new NotificationSubscriptions());
             var settingsHolder = new SettingsHolder();
+
+            // wire convention
+            var conventionsBuilder = new ConventionsBuilder(settingsHolder);
+            var conventions = conventionsBuilder.Conventions;
+            settingsHolder.SetDefault<Conventions>(conventions);
+            
             var pipelineCache = new PipelineCache(builder, settingsHolder);
 
             var pipelineConfiguration = new PipelineConfiguration();
             var pipelineSettings = new PipelineSettings(pipelineConfiguration.Modifications, settingsHolder);
 
-            var pipeline = new Pipeline<ITransportReceiveContext>(builder, settingsHolder, pipelineConfiguration.Modifications);
 
             var routingComponent = new RoutingComponent(
                 settingsHolder.GetOrCreate<UnicastRoutingTable>(),
@@ -41,6 +46,9 @@
             var featureConfigurationContext = new FeatureConfigurationContext(settingsHolder, builder, pipelineSettings, routingComponent);
             receiveFeature.Setup(featureConfigurationContext);
 
+            pipelineConfiguration.RegisterBehaviorsInContainer(settingsHolder, builder);
+
+            var pipeline = new Pipeline<ITransportReceiveContext>(builder, settingsHolder, pipelineConfiguration.Modifications);
             var mainPipelineExecutor = new MainPipelineExecutor(builder, eventAggregator, pipelineCache, pipeline);
 
             var messageContext = new MessageContext("123", new Dictionary<string, string>(), new byte[] { 1, 2, 3 }, new TransportTransaction(), new CancellationTokenSource(), new ContextBag());
