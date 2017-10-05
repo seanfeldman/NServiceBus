@@ -2,17 +2,20 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
     using System.Threading;
-    using System.Threading.Tasks;
     using DelayedDelivery;
     using Extensibility;
     using Features;
+    using Microsoft.Build.Utilities;
     using Performance.TimeToBeReceived;
     using Pipeline;
     using Routing;
     using Routing.MessageDrivenSubscriptions;
     using Settings;
     using Transport;
+    using Task = System.Threading.Tasks.Task;
 
     /// <summary></summary>
     public class Program
@@ -28,7 +31,7 @@
             var conventionsBuilder = new ConventionsBuilder(settingsHolder);
             var conventions = conventionsBuilder.Conventions;
             settingsHolder.SetDefault<Conventions>(conventions);
-            
+
             var pipelineCache = new PipelineCache(builder, settingsHolder);
 
             var pipelineConfiguration = new PipelineConfiguration();
@@ -42,9 +45,30 @@
                 settingsHolder.GetOrCreate<Publishers>());
             routingComponent.Initialize(settingsHolder, new DummyTransportInfrastructure(), pipelineSettings);
 
-            var receiveFeature = new ReceiveFeature();
-            var featureConfigurationContext = new FeatureConfigurationContext(settingsHolder, builder, pipelineSettings, routingComponent);
-            receiveFeature.Setup(featureConfigurationContext);
+            //var messageSession = new MessageSession(new RootContext(builder, pipelineCache, eventAggregator));
+
+            var featureTypes = new List<Type>
+            {
+                //typeof(Audit),
+                typeof(MessageCausation),
+                typeof(MessageCorrelation),
+                //typeof(ForwardReceivedMessages),
+                typeof(ReceiveFeature)
+            };
+
+            var featureActivator = new FeatureActivator(settingsHolder);
+            foreach (var type in featureTypes)
+            {
+                featureActivator.Add(type.Construct<Feature>());
+            }
+
+            var featureStats = featureActivator.SetupFeatures(builder, pipelineSettings, routingComponent);
+
+            DisplayDiagnosticsForFeatures(featureStats);
+
+            //var receiveFeature = new ReceiveFeature();
+            //var featureConfigurationContext = new FeatureConfigurationContext(settingsHolder, builder, pipelineSettings, routingComponent);
+            //receiveFeature.Setup(featureConfigurationContext);
 
             pipelineConfiguration.RegisterBehaviorsInContainer(settingsHolder, builder);
 
@@ -54,7 +78,54 @@
             var messageContext = new MessageContext("123", new Dictionary<string, string>(), new byte[] { 1, 2, 3 }, new TransportTransaction(), new CancellationTokenSource(), new ContextBag());
             await mainPipelineExecutor.Invoke(messageContext).ConfigureAwait(false);
         }
+
+        static void DisplayDiagnosticsForFeatures(FeaturesReport report)
+        {
+            var statusText = new StringBuilder();
+
+            statusText.AppendLine("------------- FEATURES ----------------");
+
+            foreach (var diagnosticData in report.Features)
+            {
+                statusText.AppendLine($"Name: {diagnosticData.Name}");
+                statusText.AppendLine($"Version: {diagnosticData.Version}");
+                statusText.AppendLine($"Enabled by Default: {(diagnosticData.EnabledByDefault ? "Yes" : "No")}");
+                statusText.AppendLine($"Status: {(diagnosticData.Active ? "Enabled" : "Disabled")}");
+                if (!diagnosticData.Active)
+                {
+                    statusText.Append("Deactivation reason: ");
+                    if (diagnosticData.PrerequisiteStatus != null && !diagnosticData.PrerequisiteStatus.IsSatisfied)
+                    {
+                        statusText.AppendLine("Did not fulfill its Prerequisites:");
+
+                        foreach (var reason in diagnosticData.PrerequisiteStatus.Reasons)
+                        {
+                            statusText.AppendLine("   -" + reason);
+                        }
+                    }
+                    else if (!diagnosticData.DependenciesAreMet)
+                    {
+                        statusText.AppendLine($"Did not meet one of the dependencies: {string.Join(",", diagnosticData.Dependencies.Select(t => "[" + string.Join(",", t.Select(t1 => t1)) + "]"))}");
+                    }
+                    else
+                    {
+                        statusText.AppendLine("Not explicitly enabled");
+                    }
+                }
+                else
+                {
+                    statusText.AppendLine($"Dependencies: {(diagnosticData.Dependencies.Count == 0 ? "Default" : string.Join(",", diagnosticData.Dependencies.Select(t => "[" + string.Join(",", t.Select(t1 => t1)) + "]")))}");
+                    statusText.AppendLine($"Startup Tasks: {(diagnosticData.StartupTasks.Count == 0 ? "Default" : string.Join(",", diagnosticData.StartupTasks.Select(t => t)))}");
+                }
+
+                statusText.AppendLine();
+            }
+
+            Console.WriteLine(statusText.ToString());
+        }
     }
+
+
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
     public class DummyTransportInfrastructure : TransportInfrastructure
