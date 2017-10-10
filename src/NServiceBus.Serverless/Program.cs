@@ -8,13 +8,13 @@
     using DelayedDelivery;
     using Extensibility;
     using Features;
-    using Microsoft.Build.Utilities;
     using Performance.TimeToBeReceived;
     using Pipeline;
     using Routing;
     using Routing.MessageDrivenSubscriptions;
     using Settings;
     using Transport;
+    using Unicast.Messages;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary></summary>
@@ -26,17 +26,34 @@
             var builder = new CommonObjectBuilder(new LightInjectObjectBuilder());
             var eventAggregator = new EventAggregator(new NotificationSubscriptions());
             var settingsHolder = new SettingsHolder();
+            builder.RegisterSingleton<ReadOnlySettings>(settingsHolder);
+
+            settingsHolder.Set("NServiceBus.Routing.EndpointName", "Dummy");
+            var notifications = new Notifications();
+            settingsHolder.Set<Notifications>(notifications);
+            settingsHolder.Set<NotificationSubscriptions>(new NotificationSubscriptions());
 
             // wire convention
             var conventionsBuilder = new ConventionsBuilder(settingsHolder);
             var conventions = conventionsBuilder.Conventions;
             settingsHolder.SetDefault<Conventions>(conventions);
 
-            var pipelineCache = new PipelineCache(builder, settingsHolder);
+            var scannedTypes = new List<Type>
+            {
+                typeof(TestMessage),
+                typeof(TestMessageHandler)
+            };
+            settingsHolder.SetDefault("TypesToScan", scannedTypes);
+
+            var messageMetadataRegistry = new MessageMetadataRegistry(conventions);
+            messageMetadataRegistry.RegisterMessageTypesFoundIn(settingsHolder.GetAvailableTypes());
+            settingsHolder.SetDefault<MessageMetadataRegistry>(messageMetadataRegistry);
 
             var pipelineConfiguration = new PipelineConfiguration();
+            settingsHolder.Set<PipelineConfiguration>(pipelineConfiguration);
             var pipelineSettings = new PipelineSettings(pipelineConfiguration.Modifications, settingsHolder);
 
+            settingsHolder.Set<QueueBindings>(new QueueBindings());
 
             var routingComponent = new RoutingComponent(
                 settingsHolder.GetOrCreate<UnicastRoutingTable>(),
@@ -44,8 +61,6 @@
                 settingsHolder.GetOrCreate<EndpointInstances>(),
                 settingsHolder.GetOrCreate<Publishers>());
             routingComponent.Initialize(settingsHolder, new DummyTransportInfrastructure(), pipelineSettings);
-
-            //var messageSession = new MessageSession(new RootContext(builder, pipelineCache, eventAggregator));
 
             var featureTypes = new List<Type>
             {
@@ -72,10 +87,20 @@
 
             pipelineConfiguration.RegisterBehaviorsInContainer(settingsHolder, builder);
 
+            builder.ConfigureComponent(b => settingsHolder.Get<Notifications>(), DependencyLifecycle.SingleInstance);
+
+            var pipelineCache = new PipelineCache(builder, settingsHolder);
+            //var messageSession = new MessageSession(new RootContext(builder, pipelineCache, eventAggregator));
+
             var pipeline = new Pipeline<ITransportReceiveContext>(builder, settingsHolder, pipelineConfiguration.Modifications);
             var mainPipelineExecutor = new MainPipelineExecutor(builder, eventAggregator, pipelineCache, pipeline);
 
-            var messageContext = new MessageContext("123", new Dictionary<string, string>(), new byte[] { 1, 2, 3 }, new TransportTransaction(), new CancellationTokenSource(), new ContextBag());
+            var headers = new Dictionary<string, string>
+            {
+                {Headers.EnclosedMessageTypes, typeof(TestMessage).FullName}
+            };
+            var body = new byte[] { 1, 2, 3 };
+            var messageContext = new MessageContext("messageId", headers, body, new TransportTransaction(), new CancellationTokenSource(), new ContextBag());
             await mainPipelineExecutor.Invoke(messageContext).ConfigureAwait(false);
         }
 
@@ -125,9 +150,20 @@
         }
     }
 
-
-
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+    public class TestMessage : ICommand
+    {
+    }
+
+    public class TestMessageHandler : IHandleMessages<TestMessage>
+    {
+        public Task Handle(TestMessage message, IMessageHandlerContext context)
+        {
+            return TaskEx.CompletedTask;
+        }
+    }
+
     public class DummyTransportInfrastructure : TransportInfrastructure
     {
         public override IEnumerable<Type> DeliveryConstraints { get; } = new List<Type>
