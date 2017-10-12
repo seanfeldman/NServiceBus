@@ -8,6 +8,8 @@
     using DelayedDelivery;
     using Extensibility;
     using Features;
+    using ObjectBuilder;
+    using ObjectBuilder.Common;
     using Performance.TimeToBeReceived;
     using Pipeline;
     using Routing;
@@ -23,45 +25,46 @@
         /// <summary></summary>
         public static async Task Main()
         {
-            var builder = new CommonObjectBuilder(new LightInjectObjectBuilder());
-            var eventAggregator = new EventAggregator(new NotificationSubscriptions());
             var settingsHolder = new SettingsHolder();
-            builder.RegisterSingleton<ReadOnlySettings>(settingsHolder);
 
+            // EndpointConfiguration.ctor()
             settingsHolder.Set("NServiceBus.Routing.EndpointName", "Dummy");
+
+            var pipelineConfiguration = new PipelineConfiguration();
+            settingsHolder.Set<PipelineConfiguration>(pipelineConfiguration);
+
+            var pipelineSettings = new PipelineSettings(pipelineConfiguration.Modifications, settingsHolder);
+
+            settingsHolder.Set<QueueBindings>(new QueueBindings());
+
             var notifications = new Notifications();
             settingsHolder.Set<Notifications>(notifications);
             settingsHolder.Set<NotificationSubscriptions>(new NotificationSubscriptions());
 
-            // wire convention
             var conventionsBuilder = new ConventionsBuilder(settingsHolder);
-            var conventions = conventionsBuilder.Conventions;
-            settingsHolder.SetDefault<Conventions>(conventions);
 
+            // EndpointConfiguration.Build()
             var scannedTypes = new List<Type>
             {
                 typeof(TestMessage),
                 typeof(TestMessageHandler)
             };
             settingsHolder.SetDefault("TypesToScan", scannedTypes);
+            IContainer container = new LightInjectObjectBuilder();
+
+            var conventions = conventionsBuilder.Conventions;
+            settingsHolder.SetDefault<Conventions>(conventions);
 
             var messageMetadataRegistry = new MessageMetadataRegistry(conventions);
             messageMetadataRegistry.RegisterMessageTypesFoundIn(settingsHolder.GetAvailableTypes());
             settingsHolder.SetDefault<MessageMetadataRegistry>(messageMetadataRegistry);
 
-            var pipelineConfiguration = new PipelineConfiguration();
-            settingsHolder.Set<PipelineConfiguration>(pipelineConfiguration);
-            var pipelineSettings = new PipelineSettings(pipelineConfiguration.Modifications, settingsHolder);
+            // InitializableEndpoint.ctor()
+            var builder = new CommonObjectBuilder(container);
+            builder.ConfigureComponent<IBuilder>(_ => builder, DependencyLifecycle.SingleInstance);
+            builder.RegisterSingleton<ReadOnlySettings>(settingsHolder);
 
-            settingsHolder.Set<QueueBindings>(new QueueBindings());
-
-            var routingComponent = new RoutingComponent(
-                settingsHolder.GetOrCreate<UnicastRoutingTable>(),
-                settingsHolder.GetOrCreate<DistributionPolicy>(),
-                settingsHolder.GetOrCreate<EndpointInstances>(),
-                settingsHolder.GetOrCreate<Publishers>());
-            routingComponent.Initialize(settingsHolder, new DummyTransportInfrastructure(), pipelineSettings);
-
+            // InitializableEndpoint.Initialize()
             var featureTypes = new List<Type>
             {
                 //typeof(Audit),
@@ -77,22 +80,30 @@
                 featureActivator.Add(type.Construct<Feature>());
             }
 
+            var routingComponent = new RoutingComponent(
+                settingsHolder.GetOrCreate<UnicastRoutingTable>(),
+                settingsHolder.GetOrCreate<DistributionPolicy>(),
+                settingsHolder.GetOrCreate<EndpointInstances>(),
+                settingsHolder.GetOrCreate<Publishers>());
+            routingComponent.Initialize(settingsHolder, new DummyTransportInfrastructure(), pipelineSettings);
+            
             var featureStats = featureActivator.SetupFeatures(builder, pipelineSettings, routingComponent);
-
-            DisplayDiagnosticsForFeatures(featureStats);
-
-            //var receiveFeature = new ReceiveFeature();
-            //var featureConfigurationContext = new FeatureConfigurationContext(settingsHolder, builder, pipelineSettings, routingComponent);
-            //receiveFeature.Setup(featureConfigurationContext);
-
             pipelineConfiguration.RegisterBehaviorsInContainer(settingsHolder, builder);
+            DisplayDiagnosticsForFeatures(featureStats);
 
             builder.ConfigureComponent(b => settingsHolder.Get<Notifications>(), DependencyLifecycle.SingleInstance);
 
+            // StartableEndpoint.ctor()
             var pipelineCache = new PipelineCache(builder, settingsHolder);
-            //var messageSession = new MessageSession(new RootContext(builder, pipelineCache, eventAggregator));
-
+            
+            // StartableEndpoint.Start()
             var pipeline = new Pipeline<ITransportReceiveContext>(builder, settingsHolder, pipelineConfiguration.Modifications);
+
+            var eventAggregator = new EventAggregator(new NotificationSubscriptions());
+            var messageSession = new MessageSession(new RootContext(builder, pipelineCache, eventAggregator));
+            var featureRunner = new FeatureRunner(featureActivator);
+            await featureRunner.Start(builder, messageSession).ConfigureAwait(false);
+
             var mainPipelineExecutor = new MainPipelineExecutor(builder, eventAggregator, pipelineCache, pipeline);
 
             var headers = new Dictionary<string, string>
