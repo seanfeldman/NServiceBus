@@ -2,9 +2,11 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
     using System.Text;
     using System.Threading;
+    using System.Threading.Tasks;
     using DelayedDelivery;
     using Extensibility;
     using Features;
@@ -22,8 +24,40 @@
     /// <summary></summary>
     public class Program
     {
-        /// <summary></summary>
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
         public static async Task Main()
+        {
+            await NormalMain().ConfigureAwait(false);
+            await ServerlessMain().ConfigureAwait(false);
+        }
+        public static async Task NormalMain()
+        {
+            var configuration = new EndpointConfiguration("Dummy");
+            configuration.UseTransport<DummyTransport>();
+            configuration.SendFailedMessagesTo("error");
+
+            var instance = await Endpoint.Start(configuration).ConfigureAwait(false);
+
+            var headers = new Dictionary<string, string>
+            {
+                {Headers.EnclosedMessageTypes, typeof(TestMessage).FullName}
+            };
+            var body = new byte[]
+            {
+                1,
+                2,
+                3
+            };
+            var messageContext = new MessageContext("messageId", headers, body, new TransportTransaction(), new CancellationTokenSource(), new ContextBag());
+
+            await DummyMessagePump.Pump(messageContext).ConfigureAwait(false);
+
+            await instance.Stop().ConfigureAwait(false);
+        }
+
+        /// <summary></summary>
+        public static async Task ServerlessMain()
         {
             var settingsHolder = new SettingsHolder();
 
@@ -86,7 +120,7 @@
                 settingsHolder.GetOrCreate<EndpointInstances>(),
                 settingsHolder.GetOrCreate<Publishers>());
             routingComponent.Initialize(settingsHolder, new DummyTransportInfrastructure(), pipelineSettings);
-            
+
             var featureStats = featureActivator.SetupFeatures(builder, pipelineSettings, routingComponent);
             pipelineConfiguration.RegisterBehaviorsInContainer(settingsHolder, builder);
             DisplayDiagnosticsForFeatures(featureStats);
@@ -95,7 +129,7 @@
 
             // StartableEndpoint.ctor()
             var pipelineCache = new PipelineCache(builder, settingsHolder);
-            
+
             // StartableEndpoint.Start()
             var pipeline = new Pipeline<ITransportReceiveContext>(builder, settingsHolder, pipelineConfiguration.Modifications);
 
@@ -110,7 +144,12 @@
             {
                 {Headers.EnclosedMessageTypes, typeof(TestMessage).FullName}
             };
-            var body = new byte[] { 1, 2, 3 };
+            var body = new byte[]
+            {
+                1,
+                2,
+                3
+            };
             var messageContext = new MessageContext("messageId", headers, body, new TransportTransaction(), new CancellationTokenSource(), new ContextBag());
             await mainPipelineExecutor.Invoke(messageContext).ConfigureAwait(false);
         }
@@ -175,6 +214,18 @@
         }
     }
 
+    public class DummyTransport : TransportDefinition
+    {
+        public override string ExampleConnectionStringForErrorMessage { get; } = string.Empty;
+
+        public override bool RequiresConnectionString { get; } = false;
+
+        public override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString)
+        {
+            return new DummyTransportInfrastructure();
+        }
+    }
+
     public class DummyTransportInfrastructure : TransportInfrastructure
     {
         public override IEnumerable<Type> DeliveryConstraints { get; } = new List<Type>
@@ -187,7 +238,7 @@
         public override OutboundRoutingPolicy OutboundRoutingPolicy { get; } = new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
         public override TransportReceiveInfrastructure ConfigureReceiveInfrastructure()
         {
-            throw new NotImplementedException();
+            return new TransportReceiveInfrastructure(() => new DummyMessagePump(), () => new DummyQueueCreator(), () => Task.FromResult(StartupCheckResult.Success));
         }
 
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
@@ -231,6 +282,40 @@
         public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, ContextBag context)
         {
             Console.WriteLine("Dispatching a message");
+            return TaskEx.CompletedTask;
+        }
+    }
+
+    public class DummyMessagePump : IPushMessages{
+        public Task Init(Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError, PushSettings settings)
+        {
+            DummyMessagePump.onMessage = onMessage;
+
+            return TaskEx.CompletedTask;
+        }
+
+        static Func<MessageContext, Task> onMessage;
+
+        public static Task Pump(MessageContext context)
+        {
+            return onMessage(context);
+        }
+
+        public void Start(PushRuntimeSettings limitations)
+        {
+
+        }
+
+        public Task Stop()
+        {
+            return TaskEx.CompletedTask;
+        }
+    }
+
+    public class DummyQueueCreator : ICreateQueues
+    {
+        public Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
+        {
             return TaskEx.CompletedTask;
         }
     }
