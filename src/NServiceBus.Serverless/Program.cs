@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Linq;
     using System.Text;
     using System.Threading;
@@ -28,10 +27,25 @@
 
         public static async Task Main()
         {
-            await NormalMain().ConfigureAwait(false);
+            await LearningMain().ConfigureAwait(false);
+            await DummyMain().ConfigureAwait(false);
             await ServerlessMain().ConfigureAwait(false);
         }
-        public static async Task NormalMain()
+        public static async Task LearningMain()
+        {
+            var configuration = new EndpointConfiguration("Dummy");
+            configuration.UseTransport<LearningTransport>()
+                .StorageDirectory("b:\\");
+            configuration.SendFailedMessagesTo("error");
+            configuration.AssemblyScanner().ExcludedAssemblies.Add("NServiceBus.Serverless.exe");
+
+            var instance = await Endpoint.Start(configuration).ConfigureAwait(false);
+
+            await instance.SendLocal(new TestMessage()).ConfigureAwait(false);
+
+            await instance.Stop().ConfigureAwait(false);
+        }
+        public static async Task DummyMain()
         {
             var configuration = new EndpointConfiguration("Dummy");
             configuration.UseTransport<DummyTransport>();
