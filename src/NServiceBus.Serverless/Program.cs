@@ -9,6 +9,7 @@
     using DelayedDelivery;
     using Extensibility;
     using Features;
+    using Hosting.Helpers;
     using ObjectBuilder;
     using ObjectBuilder.Common;
     using Performance.TimeToBeReceived;
@@ -27,8 +28,8 @@
 
         public static async Task Main()
         {
-            await LearningMain().ConfigureAwait(false);
-            await DummyMain().ConfigureAwait(false);
+            //await LearningMain().ConfigureAwait(false);
+            //await DummyMain().ConfigureAwait(false);
             await ServerlessMain().ConfigureAwait(false);
         }
         public static async Task LearningMain()
@@ -97,6 +98,10 @@
                 typeof(TestMessage),
                 typeof(TestMessageHandler)
             };
+
+            var scanner = new AssemblyScanner(typeof(Program).Assembly);
+            scannedTypes = scanner.GetScannableAssemblies().Types;
+
             settingsHolder.SetDefault("TypesToScan", scannedTypes);
             IContainer container = new LightInjectObjectBuilder();
 
